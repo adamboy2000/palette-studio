@@ -2,7 +2,7 @@
 
 A designer tool for building color systems on a perceptually uniform **OKLCH** foundation — so saturation and luminosity behave the way your eye expects, not the way HSL mangles them.
 
-**Live:** _(Vercel URL)_
+**Live:** https://palette-studio-ruby.vercel.app
 
 ## What it does
 
