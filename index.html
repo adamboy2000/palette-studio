@@ -20,6 +20,7 @@
     --ui-accent: oklch(85% 0.18 85);
     --ui-accent-fg: oklch(22% 0.03 90);
     --ui-hover: oklch(27% 0.005 250);
+    --ui-track: oklch(33% 0.05 92);
     --radius: 3px;
     --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     --sans: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
@@ -86,17 +87,25 @@
   }
   input.hex:focus { outline: none; border-color: var(--ui-accent); box-shadow: 0 0 0 2px oklch(85% 0.18 85 / 0.18); }
 
-  /* Sliders */
+  /* Sliders — gold-filled track (fill painted by JS), ringed circle thumb */
   input[type=range] {
-    -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
-    background: var(--ui-line-2); border-radius: 4px; outline: none; cursor: pointer;
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+    background: var(--ui-track); border-radius: 0; outline: none; cursor: pointer;
   }
   input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none; width: 15px; height: 15px; border-radius: 50%;
-    background: var(--ui-text); box-shadow: 0 1px 3px rgba(0,0,0,.5); border: none; cursor: grab;
+    background: var(--ui-bg); border: 2px solid var(--ui-accent); margin-top: -4.5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.5); cursor: grab;
   }
   input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; }
+  input[type=range]::-moz-range-track { height: 6px; background: var(--ui-track); border-radius: 0; }
+  input[type=range]::-moz-range-progress { height: 6px; background: var(--ui-accent); border-radius: 0; }
+  input[type=range]::-moz-range-thumb {
+    width: 13px; height: 13px; border-radius: 50%; background: var(--ui-bg);
+    border: 2px solid var(--ui-accent); box-shadow: 0 1px 2px rgba(0,0,0,.5); cursor: grab;
+  }
   input[type=range].hue { background: linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00); }
+  input[type=range].hue::-moz-range-progress { background: transparent; }
 
   /* Buttons */
   button { font-family: var(--sans); cursor: pointer; border: none; background: none; color: inherit; }
@@ -147,11 +156,11 @@
   /* Checkbox toggles */
   .checks { display: grid; gap: 10px; }
   .chk { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--ui-dim); cursor: pointer; }
-  .switch { width: 34px; height: 20px; border-radius: 20px; background: var(--ui-line-2); position: relative; transition: background .15s; flex: 0 0 34px; }
-  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #999; transition: transform .15s, background .15s; }
+  .switch { width: 46px; height: 24px; border-radius: 0; background: var(--ui-panel-2); border: 1px solid var(--ui-line-2); position: relative; transition: background .15s, border-color .15s; flex: 0 0 46px; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 0; background: var(--ui-dim); transition: transform .15s, background .15s; }
   .chk input { display: none; }
-  .chk input:checked + .switch { background: var(--ui-accent); }
-  .chk input:checked + .switch::after { transform: translateX(14px); background: var(--ui-accent-fg); }
+  .chk input:checked + .switch { background: var(--ui-accent); border-color: var(--ui-accent); }
+  .chk input:checked + .switch::after { transform: translateX(22px); background: var(--ui-accent-fg); }
 
   .seg { display: flex; background: var(--ui-panel-2); border: 1px solid var(--ui-line-2); border-radius: var(--radius); padding: 3px; gap: 3px; }
   .seg button { flex: 1; font-size: 11.5px; padding: 6px 4px; border-radius: 5px; color: var(--ui-dim); }
@@ -696,9 +705,21 @@ function render(){
   });
   boardInner.style.transform = `scale(${state.zoom})`;
   boardInner.style.transformOrigin = 'top left';
+  paintAllRanges();
   updateMeta();
 }
 function pickTextColor(bg){ return relLum(bg) > 0.32 ? 'rgba(0,0,0,.72)' : 'rgba(255,255,255,.86)'; }
+
+/* Paint the gold-filled portion of every slider (skips rainbow hue sliders) */
+function paintRange(el){
+  if(el.classList.contains('hue')) return;
+  const min=+el.min||0, max=(el.max!==''?+el.max:100), v=+el.value;
+  const p = max>min ? ((v-min)/(max-min))*100 : 0;
+  el.style.background = `linear-gradient(90deg, var(--ui-accent) 0 ${p}%, var(--ui-track) ${p}% 100%)`;
+}
+function paintAllRanges(){ document.querySelectorAll('input[type=range]').forEach(paintRange); }
+/* keep fill in sync live during a drag */
+document.addEventListener('input', e=>{ if(e.target.matches && e.target.matches('input[type=range]')) paintRange(e.target); }, true);
 
 function updateMeta(){
   const rows = allRows();
